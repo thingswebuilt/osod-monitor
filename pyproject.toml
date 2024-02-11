@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[project]
+name = "OsOD Serial Monitor"
+version = "0.1.0"
+description = "Monitor and log serial data from the OsOD board"
+authors = ["Rob Berwick <rob.berwick@gmail.com"]
+requires-python = "^3.11"
+
+[project.dependencies]
+pytest = "^8.0.0"
+pyserialtransfer = "^2.6.9"
+black = "^24.1.1"
