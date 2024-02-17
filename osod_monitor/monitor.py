@@ -39,38 +39,44 @@ class Monitor:
         self.link.open()
         try:
             while self.running:
-                if not self.input_queue.empty():
-                    data = self.input_queue.get()
-                    # process data
-
-                if self.link.available():
-                    if self.link.status < 0:
-                        if self.link.status == txfer.CRC_ERROR:
-                            print("ERROR: CRC_ERROR")
-                        elif self.link.status == txfer.PAYLOAD_ERROR:
-                            print("ERROR: PAYLOAD_ERROR")
-                        elif self.link.status == txfer.STOP_BYTE_ERROR:
-                            print("ERROR: STOP_BYTE_ERROR")
-                        else:
-                            print("ERROR: {}".format(self.link.status))
-                        continue
-
-                    msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
-
-                    match int.from_bytes(msg_type):
-                        case PayloadType.REQUESTED_STATE.value:
-                            payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
-                            payload = RequestedState.from_bytes(payload_bytes)
-
-                        case _:  # default
-                            payload = None
-
-                    if payload:
-                        self.output_queue.put(payload)
+                self.process_outgoing_messages()
+                self.process_incoming_messages()
         except KeyboardInterrupt:
             self.running = False
         # link is no longer running, so close it
         self.link.close()
+
+    def process_outgoing_messages(self):
+        if not self.input_queue.empty():
+            data = self.input_queue.get()
+            # process data
+
+    def process_incoming_messages(self):
+        if self.link.available():
+            if self.link.status < 0:
+                if self.link.status == txfer.CRC_ERROR:
+                    print("ERROR: CRC_ERROR")
+                elif self.link.status == txfer.PAYLOAD_ERROR:
+                    print("ERROR: PAYLOAD_ERROR")
+                elif self.link.status == txfer.STOP_BYTE_ERROR:
+                    print("ERROR: STOP_BYTE_ERROR")
+                else:
+                    print("ERROR: {}".format(self.link.status))
+                return
+
+            msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
+
+            payload = None
+            match int.from_bytes(msg_type):
+                case PayloadType.REQUESTED_STATE.value:
+                    payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
+                    payload = RequestedState.from_bytes(payload_bytes)
+
+                case _:
+                    payload = None
+
+            if payload:
+                self.output_queue.put(payload)
 
     def send(self, data):
         self.input_queue.put(data)
