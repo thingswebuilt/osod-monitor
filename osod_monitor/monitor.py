@@ -37,35 +37,40 @@ class Monitor:
     def run(self):
         self.link = txfer.SerialTransfer(self.port, 115200)
         self.link.open()
-        while self.running:
-            if not self.input_queue.empty():
-                data = self.input_queue.get()
-                # process data
+        try:
+            while self.running:
+                if not self.input_queue.empty():
+                    data = self.input_queue.get()
+                    # process data
 
-            if self.link.available():
-                if self.link.status < 0:
-                    if self.link.status == txfer.CRC_ERROR:
-                        print("ERROR: CRC_ERROR")
-                    elif self.link.status == txfer.PAYLOAD_ERROR:
-                        print("ERROR: PAYLOAD_ERROR")
-                    elif self.link.status == txfer.STOP_BYTE_ERROR:
-                        print("ERROR: STOP_BYTE_ERROR")
-                    else:
-                        print("ERROR: {}".format(self.link.status))
-                    continue
+                if self.link.available():
+                    if self.link.status < 0:
+                        if self.link.status == txfer.CRC_ERROR:
+                            print("ERROR: CRC_ERROR")
+                        elif self.link.status == txfer.PAYLOAD_ERROR:
+                            print("ERROR: PAYLOAD_ERROR")
+                        elif self.link.status == txfer.STOP_BYTE_ERROR:
+                            print("ERROR: STOP_BYTE_ERROR")
+                        else:
+                            print("ERROR: {}".format(self.link.status))
+                        continue
 
-                msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
+                    msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
 
-                match int.from_bytes(msg_type):
-                    case PayloadType.REQUESTED_STATE.value:
-                        payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
-                        payload = RequestedState.from_bytes(payload_bytes)
+                    match int.from_bytes(msg_type):
+                        case PayloadType.REQUESTED_STATE.value:
+                            payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
+                            payload = RequestedState.from_bytes(payload_bytes)
 
-                    case _:  # default
-                        payload = None
+                        case _:  # default
+                            payload = None
 
-                if payload:
-                    self.output_queue.put(payload)
+                    if payload:
+                        self.output_queue.put(payload)
+        except KeyboardInterrupt:
+            self.running = False
+        # link is no longer running, so close it
+        self.link.close()
 
     def send(self, data):
         self.input_queue.put(data)
