@@ -2,7 +2,11 @@ import multiprocessing
 
 from pySerialTransfer import pySerialTransfer as txfer
 
-from osod_monitor.payloads import PayloadType, RequestedState
+from osod_monitor.payloads import (
+    PayloadType,
+    RequestedState,
+    EstimatedState,
+)
 
 
 class Monitor:
@@ -71,7 +75,9 @@ class Monitor:
                 case PayloadType.REQUESTED_STATE.value:
                     payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
                     payload = RequestedState.from_bytes(payload_bytes)
-
+                case PayloadType.ESTIMATED_STATE.value:
+                    payload_bytes = bytes(self.link.rxBuff[1 : (1 + 32)])
+                    payload = EstimatedState.from_bytes(payload_bytes)
                 case _:
                     payload = None
 
