@@ -2,6 +2,7 @@ import sys
 
 import click
 from loguru import logger
+from pySerialTransfer.pySerialTransfer import InvalidSerialPort
 
 from osod_monitor.monitor import Monitor
 
@@ -12,8 +13,14 @@ logger.add(sys.stdout, format="{time} {level} {message}", enqueue=True)
 @click.command()
 @click.option("--port", default="COM3", help="The serial port to connect to.")
 def run(port: str):
-    monitor = Monitor(port=port)
-    monitor.start()
+    while True:
+        try:
+            monitor = Monitor(port=port)
+            monitor.start()
+            break  # If Monitor() call succeeds, break the loop
+        except InvalidSerialPort as e:
+            logger.error(f"Failed to start Monitor: {e}")
+            continue  # If Monitor() call fails, continue the loop
     try:
         while True:
             if not monitor.output_queue.empty():
