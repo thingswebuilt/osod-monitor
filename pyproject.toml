@@ -14,3 +14,7 @@ pyserialtransfer = "^2.6.9"
 black = "^24.1.1"
 loguru = "^0.7.2"
 click = "^8.1.7"
+isort = "^5.13.2"
+
+[tool.isort]
+profile = "black"
