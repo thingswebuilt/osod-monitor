@@ -13,8 +13,6 @@ class Monitor:
 
     def __init__(self, port: str, baud: int = 115200):
         self.port = port
-        self.link = txfer.SerialTransfer(port, 115200)
-        self.link = None
         self.baud = baud
         self.link: txfer.SerialTransfer | None = None
         self.running = multiprocessing.Value("b", False)
