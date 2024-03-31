@@ -1,15 +1,14 @@
 import multiprocessing
 
+from loguru import logger
 from pySerialTransfer import pySerialTransfer as txfer
 
 from osod_monitor.payloads import (
-    PayloadType,
-    RequestedState,
     EstimatedState,
     IncomingSerialData,
+    PayloadType,
+    RequestedState,
 )
-
-from loguru import logger
 
 
 class Monitor:
