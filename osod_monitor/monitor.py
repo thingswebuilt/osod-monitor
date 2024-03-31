@@ -16,8 +16,9 @@ class Monitor:
         self.link = txfer.SerialTransfer(port, 115200)
         self.link = None
         self.baud = baud
+        self.link: txfer.SerialTransfer | None = None
         self.running = multiprocessing.Value("b", False)
-        self.process = None
+        self.process: multiprocessing.Process | None = None
         self.input_queue = multiprocessing.Queue()
         self.output_queue = multiprocessing.Queue()
 
