@@ -8,6 +8,7 @@ from osod_monitor.monitor import Monitor
 
 logger.remove(0)
 logger.add(sys.stdout, format="{time} {level} {message}", enqueue=True)
+logger.add("payload.log", format="{time} {level} {message}", enqueue=True)
 
 
 @click.command()
