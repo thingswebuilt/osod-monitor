@@ -25,7 +25,7 @@ class Payload(ABC):
 
     @classmethod
     def from_bytes(cls, byte_data: bytes):
-        args = struct.unpack(cls.struct_format, byte_data)
+        args = struct.unpack(cls.struct_format, byte_data[: cls.struct_obj.size])
         return cls(*args)
 
     @abstractmethod
@@ -40,6 +40,7 @@ class Payload(ABC):
 @dataclass
 class IncomingSerialData(Payload):
     struct_format = "<?"
+    struct_obj = struct.Struct(struct_format)
 
     available: bool
 
@@ -53,6 +54,7 @@ class IncomingSerialData(Payload):
 @dataclass
 class RequestedState(Payload):
     struct_format = "<ff"
+    struct_obj = struct.Struct(struct_format)
 
     velocity: float
     angular_velocity: float
@@ -71,6 +73,7 @@ class RequestedState(Payload):
 @dataclass
 class EstimatedState(Payload):
     struct_format = "<Ifffffff"
+    struct_obj = struct.Struct(struct_format)
 
     timestamp: int
     x: float
@@ -106,3 +109,10 @@ class EstimatedState(Payload):
             f"tof_left={self.tof_left}, "
             f"tof_right={self.tof_right})"
         )
+
+
+PAYLOADS = {
+    PayloadType.INCOMING_SERIAL_DATA: IncomingSerialData,
+    PayloadType.REQUESTED_STATE: RequestedState,
+    PayloadType.ESTIMATED_STATE: EstimatedState,
+}

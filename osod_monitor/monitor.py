@@ -1,4 +1,5 @@
 import multiprocessing
+from typing import TYPE_CHECKING, Protocol, Generic, TypeVar, Callable
 
 from loguru import logger
 from pySerialTransfer import pySerialTransfer as txfer
@@ -10,17 +11,27 @@ from osod_monitor.payloads import (
     RequestedState,
 )
 
+if TYPE_CHECKING:
+    from osod_monitor.payloads import Payload
+
+T = TypeVar("T")
+
+PayloadProcessor = Callable[[bytes], T | None]
+
 
 class Monitor:
 
-    def __init__(self, port: str, baud: int = 115200):
+    def __init__(
+        self, port: str, payload_processor: PayloadProcessor[T], baud: int = 115200
+    ):
         self.port = port
         self.baud = baud
         self.link: txfer.SerialTransfer | None = None
         self.running = multiprocessing.Value("b", False)
         self.process: multiprocessing.Process | None = None
-        self.input_queue = multiprocessing.Queue()
-        self.output_queue = multiprocessing.Queue()
+        self.input_queue: multiprocessing.Queue[Payload] = multiprocessing.Queue()
+        self.output_queue: multiprocessing.Queue[Payload] = multiprocessing.Queue()
+        self.payload_processor = payload_processor
 
     def open(self):
         if self.link is not None:
@@ -70,21 +81,8 @@ class Monitor:
                     logger.error("ERROR: {}".format(self.link.status))
                 return
 
-            msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
-
-            match int.from_bytes(msg_type):
-                case PayloadType.INCOMING_SERIAL_DATA.value:
-                    payload_bytes = bytes(self.link.rxBuff[1])
-                    payload = IncomingSerialData.from_bytes(payload_bytes)
-                case PayloadType.REQUESTED_STATE.value:
-                    payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
-                    payload = RequestedState.from_bytes(payload_bytes)
-                case PayloadType.ESTIMATED_STATE.value:
-                    payload_bytes = bytes(self.link.rxBuff[1 : (1 + 32)])
-                    payload = EstimatedState.from_bytes(payload_bytes)
-                case _:
-                    logger.warning(f"Unknown message type: bytes: {msg_type}")
-                    payload = None
+            payload_bytes = bytes(item for item in self.link.rxBuff if item != " ")
+            payload = self.payload_processor(payload_bytes)
 
             if payload:
                 self.output_queue.put(payload)
