@@ -70,7 +70,6 @@ class Monitor:
 
             msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
 
-            payload = None
             match int.from_bytes(msg_type):
                 case PayloadType.REQUESTED_STATE.value:
                     payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
