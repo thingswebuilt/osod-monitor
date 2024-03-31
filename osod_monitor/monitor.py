@@ -81,6 +81,9 @@ class Monitor:
                     logger.error("ERROR: {}".format(self.link.status))
                 return
 
+            # Extract the payload from the buffer, ignoring spaces
+            # why they're using spaces in the buffer is beyond me
+            # what's wrong with None as a sentinel value?
             payload_bytes = bytes(item for item in self.link.rxBuff if item != " ")
             payload = self.payload_processor(payload_bytes)
 
