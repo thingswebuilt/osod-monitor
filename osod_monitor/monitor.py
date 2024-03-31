@@ -8,6 +8,8 @@ from osod_monitor.payloads import (
     EstimatedState,
 )
 
+from loguru import logger
+
 
 class Monitor:
 
@@ -59,13 +61,13 @@ class Monitor:
         if self.link.available():
             if self.link.status < 0:
                 if self.link.status == txfer.CRC_ERROR:
-                    print("ERROR: CRC_ERROR")
+                    logger.error("ERROR: CRC_ERROR")
                 elif self.link.status == txfer.PAYLOAD_ERROR:
-                    print("ERROR: PAYLOAD_ERROR")
+                    logger.error("ERROR: PAYLOAD_ERROR")
                 elif self.link.status == txfer.STOP_BYTE_ERROR:
-                    print("ERROR: STOP_BYTE_ERROR")
+                    logger.error("ERROR: STOP_BYTE_ERROR")
                 else:
-                    print("ERROR: {}".format(self.link.status))
+                    logger.error("ERROR: {}".format(self.link.status))
                 return
 
             msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
@@ -78,6 +80,7 @@ class Monitor:
                     payload_bytes = bytes(self.link.rxBuff[1 : (1 + 32)])
                     payload = EstimatedState.from_bytes(payload_bytes)
                 case _:
+                    logger.warning(f"Unknown message type: bytes: {msg_type}")
                     payload = None
 
             if payload:
