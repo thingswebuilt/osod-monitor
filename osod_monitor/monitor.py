@@ -11,10 +11,11 @@ from osod_monitor.payloads import (
 
 class Monitor:
 
-    def __init__(self, port: str):
+    def __init__(self, port: str, baud: int = 115200):
         self.port = port
         self.link = txfer.SerialTransfer(port, 115200)
         self.link = None
+        self.baud = baud
         self.running = multiprocessing.Value("b", False)
         self.process = None
         self.input_queue = multiprocessing.Queue()
@@ -39,7 +40,7 @@ class Monitor:
             self.process.join()
 
     def run(self):
-        self.link = txfer.SerialTransfer(self.port, 115200)
+        self.link = txfer.SerialTransfer(port=self.port, baud=self.baud)
         self.link.open()
         try:
             while self.running:
