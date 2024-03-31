@@ -2,7 +2,7 @@ import multiprocessing
 from typing import TYPE_CHECKING, TypeVar, Callable
 
 from loguru import logger
-from pySerialTransfer import pySerialTransfer as txfer
+from pySerialTransfer import pySerialTransfer as tx
 
 if TYPE_CHECKING:
     from osod_monitor.payloads import Payload
@@ -19,7 +19,7 @@ class Monitor:
     ):
         self.port = port
         self.baud = baud
-        self.link: txfer.SerialTransfer | None = None
+        self.link: tx.SerialTransfer | None = None
         self.running = multiprocessing.Value("b", False)
         self.process: multiprocessing.Process | None = None
         self.input_queue: multiprocessing.Queue[Payload] = multiprocessing.Queue()
@@ -45,7 +45,7 @@ class Monitor:
             self.process.join()
 
     def run(self):
-        self.link = txfer.SerialTransfer(port=self.port, baud=self.baud)
+        self.link = tx.SerialTransfer(port=self.port, baud=self.baud)
         self.link.open()
         try:
             while self.running:
@@ -64,11 +64,11 @@ class Monitor:
     def process_incoming_messages(self):
         if self.link.available():
             if self.link.status < 0:
-                if self.link.status == txfer.CRC_ERROR:
+                if self.link.status == tx.CRC_ERROR:
                     logger.error("ERROR: CRC_ERROR")
-                elif self.link.status == txfer.PAYLOAD_ERROR:
+                elif self.link.status == tx.PAYLOAD_ERROR:
                     logger.error("ERROR: PAYLOAD_ERROR")
-                elif self.link.status == txfer.STOP_BYTE_ERROR:
+                elif self.link.status == tx.STOP_BYTE_ERROR:
                     logger.error("ERROR: STOP_BYTE_ERROR")
                 else:
                     logger.error("ERROR: {}".format(self.link.status))
