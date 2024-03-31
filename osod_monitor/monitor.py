@@ -1,15 +1,8 @@
 import multiprocessing
-from typing import TYPE_CHECKING, Protocol, Generic, TypeVar, Callable
+from typing import TYPE_CHECKING, TypeVar, Callable
 
 from loguru import logger
 from pySerialTransfer import pySerialTransfer as txfer
-
-from osod_monitor.payloads import (
-    EstimatedState,
-    IncomingSerialData,
-    PayloadType,
-    RequestedState,
-)
 
 if TYPE_CHECKING:
     from osod_monitor.payloads import Payload
