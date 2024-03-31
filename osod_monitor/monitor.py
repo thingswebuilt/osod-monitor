@@ -53,7 +53,7 @@ class Monitor:
     def process_outgoing_messages(self):
         if not self.input_queue.empty():
             data = self.input_queue.get()
-            # process data
+            # TODO: process data
 
     def process_incoming_messages(self):
         if self.link.available():
