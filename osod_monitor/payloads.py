@@ -32,6 +32,10 @@ class Payload(ABC):
     def __repr__(self):
         pass
 
+    @property
+    def payload_size(self) -> int:
+        return self.struct_obj.size
+
 
 @dataclass
 class IncomingSerialData(Payload):
