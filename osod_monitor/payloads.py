@@ -1,4 +1,5 @@
 import struct
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -9,52 +10,64 @@ class PayloadType(IntEnum):
     ESTIMATED_STATE = 3
 
 
-PAYLOAD_DEFINITIONS = {
-    PayloadType.INCOMING_SERIAL_DATA: struct.Struct("<?"),
-    PayloadType.REQUESTED_STATE: struct.Struct("<ff"),
-    PayloadType.ESTIMATED_STATE: struct.Struct("<Ifffffff"),
-}
+class Payload(ABC):
 
+    payload_type: PayloadType
+    struct_format: str = ""
+    struct_obj: struct.Struct
 
-@dataclass
-class IncomingSerialData:
-    available: bool
+    def __init__(self, *args):
+        self.struct_obj = struct.Struct(self.struct_format)
 
+    @abstractmethod
     def __bytes__(self):
-        return PAYLOAD_DEFINITIONS[PayloadType.INCOMING_SERIAL_DATA].pack(
-            self.available
-        )
+        pass
 
     @classmethod
     def from_bytes(cls, byte_data: bytes):
-        return cls(
-            *PAYLOAD_DEFINITIONS[PayloadType.INCOMING_SERIAL_DATA].unpack(byte_data)
-        )
+        args = struct.unpack(cls.struct_format, byte_data)
+        return cls(*args)
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+
+@dataclass
+class IncomingSerialData(Payload):
+    struct_format = "<?"
+
+    available: bool
+
+    def __bytes__(self):
+        return self.struct_obj.pack(self.available)
 
     def __repr__(self):
         return f"IncomingSerialData(available={self.available})"
 
 
 @dataclass
-class RequestedState:
+class RequestedState(Payload):
+    struct_format = "<ff"
+
     velocity: float
     angular_velocity: float
 
     def __bytes__(self):
-        return PAYLOAD_DEFINITIONS[PayloadType.REQUESTED_STATE].pack(
-            self.velocity, self.angular_velocity
-        )
-
-    @classmethod
-    def from_bytes(cls, byte_data: bytes):
-        return cls(*PAYLOAD_DEFINITIONS[PayloadType.REQUESTED_STATE].unpack(byte_data))
+        return self.struct_obj.pack(self.velocity, self.angular_velocity)
 
     def __repr__(self):
-        return f"RequestedState(velocity={self.velocity}, angular_velocity={self.angular_velocity})"
+        return (
+            f"RequestedState("
+            f"velocity={self.velocity}, "
+            f"angular_velocity={self.angular_velocity})"
+        )
 
 
 @dataclass
-class EstimatedState:
+class EstimatedState(Payload):
+    struct_format = "<Ifffffff"
+
     timestamp: int
     x: float
     y: float
@@ -66,7 +79,7 @@ class EstimatedState:
     tof_right: float
 
     def __bytes__(self):
-        return PAYLOAD_DEFINITIONS[PayloadType.ESTIMATED_STATE].pack(
+        return self.struct_obj.pack(
             self.timestamp,
             self.x,
             self.y,
@@ -77,12 +90,15 @@ class EstimatedState:
             self.tof_right,
         )
 
-    @classmethod
-    def from_bytes(cls, byte_data: bytes):
-        return cls(*PAYLOAD_DEFINITIONS[PayloadType.ESTIMATED_STATE].unpack(byte_data))
-
     def __repr__(self):
         return (
-            f"EstimatedState(timestamp={self.timestamp}, x={self.x}, y={self.y}, heading={self.heading}, "
-            f"tof_front={self.tof_front}, tof_rear={self.tof_rear}, tof_left={self.tof_left}, tof_right={self.tof_right})"
+            f"EstimatedState("
+            f"timestamp={self.timestamp}, "
+            f"x={self.x}, "
+            f"y={self.y}, "
+            f"heading={self.heading}, "
+            f"tof_front={self.tof_front}, "
+            f"tof_rear={self.tof_rear}, "
+            f"tof_left={self.tof_left}, "
+            f"tof_right={self.tof_right})"
         )
