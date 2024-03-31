@@ -6,6 +6,7 @@ from osod_monitor.payloads import (
     PayloadType,
     RequestedState,
     EstimatedState,
+    IncomingSerialData,
 )
 
 from loguru import logger
@@ -73,6 +74,9 @@ class Monitor:
             msg_type = self.link.rx_obj(obj_type="c", byte_format="<")
 
             match int.from_bytes(msg_type):
+                case PayloadType.INCOMING_SERIAL_DATA.value:
+                    payload_bytes = bytes(self.link.rxBuff[1])
+                    payload = IncomingSerialData.from_bytes(payload_bytes)
                 case PayloadType.REQUESTED_STATE.value:
                     payload_bytes = bytes(self.link.rxBuff[1 : (1 + 8)])
                     payload = RequestedState.from_bytes(payload_bytes)

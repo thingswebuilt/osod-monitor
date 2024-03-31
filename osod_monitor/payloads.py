@@ -4,14 +4,35 @@ from enum import IntEnum
 
 
 class PayloadType(IntEnum):
-    REQUESTED_STATE = 4
-    ESTIMATED_STATE = 6
+    INCOMING_SERIAL_DATA = 1
+    REQUESTED_STATE = 2
+    ESTIMATED_STATE = 3
 
 
 PAYLOAD_DEFINITIONS = {
+    PayloadType.INCOMING_SERIAL_DATA: struct.Struct("<?"),
     PayloadType.REQUESTED_STATE: struct.Struct("<ff"),
     PayloadType.ESTIMATED_STATE: struct.Struct("<Ifffffff"),
 }
+
+
+@dataclass
+class IncomingSerialData:
+    available: bool
+
+    def __bytes__(self):
+        return PAYLOAD_DEFINITIONS[PayloadType.INCOMING_SERIAL_DATA].pack(
+            self.available
+        )
+
+    @classmethod
+    def from_bytes(cls, byte_data: bytes):
+        return cls(
+            *PAYLOAD_DEFINITIONS[PayloadType.INCOMING_SERIAL_DATA].unpack(byte_data)
+        )
+
+    def __repr__(self):
+        return f"IncomingSerialData(available={self.available})"
 
 
 @dataclass
