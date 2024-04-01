@@ -1,3 +1,5 @@
+import ast
+import dataclasses
 import sys
 
 import click
@@ -6,10 +8,6 @@ from pySerialTransfer.pySerialTransfer import InvalidSerialPort
 
 from osod_monitor.monitor import Monitor
 from osod_monitor.payloads import (
-    PayloadType,
-    IncomingSerialData,
-    RequestedState,
-    EstimatedState,
     Payload,
     PAYLOADS,
 )
@@ -19,9 +17,56 @@ logger.add(sys.stdout, format="{time} {level} {message}", enqueue=True)
 logger.add("payload.log", format="{time} {level} {message}", enqueue=True)
 logger.add(
     "monitor.log",
-    format="{time} {level} {message}",
+    format="{message}",
     enqueue=True,
     filter="osod_monitor.monitor",
+)
+
+
+def title_to_snake_case(title_case_str):
+    snake_case_str = "".join(
+        "_" + i.lower() if i.isupper() else i for i in title_case_str
+    )
+    return snake_case_str.lstrip("_")
+
+
+def csv_logger(record):
+    message_dict = ast.literal_eval(record["message"])
+    try:
+        data_values = ",".join(str(val) for val in message_dict.values())
+        return f"{data_values}\n"
+    except TypeError:
+        pass
+
+
+def match_logger(record, payload_name: str):
+    return record["extra"].get("payload_type") == payload_name
+
+
+# there's almost certainly a better way to do this
+logger.add(
+    "cell_status.log",
+    format=csv_logger,
+    filter=lambda record: match_logger(record, "CellStatus"),
+    enqueue=True,
+)
+logger.add(
+    "incoming_serial_data.log",
+    format=csv_logger,
+    filter=lambda record: match_logger(record, "IncomingSerialData"),
+    enqueue=True,
+)
+logger.add(
+    "estimated_state.log",
+    format=csv_logger,
+    filter=lambda record: match_logger(record, "EstimatedState"),
+    enqueue=True,
+)
+logger.add(
+    "requested_state.log",
+    format=csv_logger,
+    filter=lambda record: match_logger(record, "RequestedState"),
+    enqueue=True,
 )
 
 
@@ -49,7 +94,8 @@ def run(port: str):
         while True:
             if not monitor.output_queue.empty():
                 data = monitor.output_queue.get()
-                logger.info(data)
+                with logger.contextualize(payload_type=data.__class__.__name__):
+                    logger.info(dataclasses.asdict(data))
     except KeyboardInterrupt:
         monitor.close()
 
