@@ -8,6 +8,7 @@ class PayloadType(IntEnum):
     INCOMING_SERIAL_DATA = 1
     REQUESTED_STATE = 2
     ESTIMATED_STATE = 3
+    CELL_STATUS = 4
 
 
 class Payload(ABC):
@@ -111,8 +112,52 @@ class EstimatedState(Payload):
         )
 
 
+@dataclass
+class CellStatus(Payload):
+    struct_format = "<ffff?????"
+    struct_obj = struct.Struct(struct_format)
+
+    cell_1_voltage: float
+    cell_2_voltage: float
+    cell_3_voltage: float
+    psu_voltage: float
+    all_ok: bool
+    out_of_balance: bool
+    low_cell_voltage: bool
+    high_cell_voltage: bool
+    psu_under_voltage: bool
+
+    def __bytes__(self):
+        return self.struct_obj.pack(
+            self.cell_1_voltage,
+            self.cell_2_voltage,
+            self.cell_3_voltage,
+            self.psu_voltage,
+            self.all_ok,
+            self.out_of_balance,
+            self.low_cell_voltage,
+            self.high_cell_voltage,
+            self.psu_under_voltage,
+        )
+
+    def __repr__(self):
+        return (
+            f"CellStatus("
+            f"cell_1_voltage={self.cell_1_voltage}, "
+            f"cell_2_voltage={self.cell_2_voltage}, "
+            f"cell_3_voltage={self.cell_3_voltage}, "
+            f"psu_voltage={self.psu_voltage}, "
+            f"all_ok={self.all_ok}, "
+            f"out_of_balance={self.out_of_balance}, "
+            f"low_cell_voltage={self.low_cell_voltage}, "
+            f"high_cell_voltage={self.high_cell_voltage}, "
+            f"psu_under_voltage={self.psu_under_voltage})"
+        )
+
+
 PAYLOADS = {
     PayloadType.INCOMING_SERIAL_DATA: IncomingSerialData,
     PayloadType.REQUESTED_STATE: RequestedState,
     PayloadType.ESTIMATED_STATE: EstimatedState,
+    PayloadType.CELL_STATUS: CellStatus,
 }
